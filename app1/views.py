@@ -160,23 +160,65 @@ class BookAPIView2(APIView):
 
         book_id = kwargs.get("id")
 
-        try:
-            book_obj = Book.objects.get(pk=book_id)
-        except:
+        # try:
+        #     book_obj = Book.objects.get(pk=book_id)
+        # except:
+        #     return Response({
+        #         "status": status.HTTP_400_BAD_REQUEST,
+        #         "message": "图书不存在",
+        #     })
+        #
+        # # 前端发送的修改的值需要做安全校验
+        # # 更新参数的时候使用序列化器完成数据的校验
+        # # TODO 如果当前要局部修改则需指定 partial = True即可
+        # book_ser = BookModelSerializerV2(data=request_data, instance=book_obj, partial=True)
+        # book_ser.is_valid(raise_exception=True)
+        # save = book_ser.save()
+        #
+        # return Response({
+        #     "status": 200,
+        #     "message": "更新成功",
+        #     "results": BookModelSerializerV2(save).data
+        # })
+        if book_id and isinstance(request_data,dict):
+            # 代表修改单个
+            book_ids = [book_id,]
+            book_data = [request_data,]
+        elif not book_id and isinstance(request_data,list):
+            book_ids = []
+
+            for dic in request_data:
+                id = dic.pop('id',None)
+                if id:
+                    book_ids.append(id)
+                else:
+                    return Response({
+                        "status":status.HTTP_400_BAD_REQUEST,
+                        "msg":'id不存在'
+                    })
+        else:
             return Response({
                 "status": status.HTTP_400_BAD_REQUEST,
-                "message": "图书不存在",
+                "message": '参数有误',
             })
 
-        # 前端发送的修改的值需要做安全校验
-        # 更新参数的时候使用序列化器完成数据的校验
-        # TODO 如果当前要局部修改则需指定 partial = True即可
-        book_ser = BookModelSerializerV2(data=request_data, instance=book_obj, partial=True)
+        book_list = []
+
+        for pk in book_ids:
+            try:
+                book_obj = Book.objects.get(pk=pk)
+                book_list.append(book_obj)
+            except:
+                index = book_ids.index(pk)
+                request_data.pop(index)
+
+        book_ser = BookModelSerializerV2(data=request_data, instance=book_list,
+                                         partial=True, many=True)
         book_ser.is_valid(raise_exception=True)
         save = book_ser.save()
-
         return Response({
-            "status": 200,
-            "message": "更新成功",
-            "results": BookModelSerializerV2(save).data
+            "status": status.HTTP_200_OK,
+            "message": "批量更新成功",
+            "results": BookModelSerializerV2(save)
         })
+

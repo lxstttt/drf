@@ -69,10 +69,27 @@ class BookModelDeSerializer(ModelSerializer):
             raise exceptions.ValidationError("价格最多不能超过1000")
         return obj
 
+class BookListSerializer(serializers.ListSerializer):
+    """
+    使用此序列化器完成多个对象同时修改
+    """
+    # 重写update方法完成更新
+    def update(self, instance, validated_data):
+        # instance 要修改的对象
+        # validated_data 要修改的值
+        print(self,instance,validated_data,self.child)
+
+        for index,obj in enumerate(instance):
+            self.child.update(obj,validated_data[index])
+            return instance
+
 # 序列化器与反序列化器整合
 class BookModelSerializerV2(ModelSerializer):
 
+
     class Meta:
+
+        list_serializer_class = BookListSerializer
         model = Book
         # 指定的字段  填序列化与反序列所需字段并集
         fields = ("book_name", "price", "pic", "publish", "authors",'press_name','author_list')
@@ -111,6 +128,7 @@ class BookModelSerializerV2(ModelSerializer):
 
         return attrs
 
+
     # 局部钩子的使用  验证每个字段
     def validate_price(self, obj):
         # 价格不能超过1000
@@ -126,3 +144,7 @@ class BookModelSerializerV2(ModelSerializer):
     #     instance.book_name = book_name
     #     instance.save()
     #     return instance
+
+
+
+
