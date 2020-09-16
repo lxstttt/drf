@@ -72,8 +72,13 @@ class StudentModelViewSet(ModelViewSet):
     def user_login(self, request, *args, **kwargs):
         # 用户登录
         request_data = request.data
-        print(request_data)
-        return self.list(request, *args, **kwargs)
+        print(request_data,request_data.get('stu_name'))
+        name = request_data.get("stu_name")
+        pwd = request_data.get('pwd')
+        if name and pwd:
+            return APIResponse(data_message="登录成功")
+        else:
+            return APIResponse(data_message="登录失败")
 
     def user_register(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
